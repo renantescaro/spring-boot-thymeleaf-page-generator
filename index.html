@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gerador de Páginas Thymeleaf</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="dark">
+    <button id="themeToggle" onclick="toggleTheme()">Alternar Tema</button>
+
+    <h1>Gerador de HTML Thymeleaf</h1>
+
+    <div style="display: flex; width: 100%;">
+        <div style="width: 50%;">
+            <label for="pageType">Tipo de Página:</label>
+            <select id="pageType">
+                <option value="index">Listagem</option>
+                <option value="new">Novo</option>
+                <option value="edit">Edição</option>
+            </select>
+        
+            <label for="entityName">Nome da Entidade (ex: vehicleBrand-Marca de Veículo):</label>
+            <input type="text" id="entityName" placeholder="Digite o nome da entidade e o nome em português" />
+        
+            <label for="fields">Campos da entidade (formato: campo-label, separados por linha):</label>
+            <textarea id="fields" placeholder="Exemplo:id-Código
+name-Nome
+document-Documento"></textarea>
+        
+            <button onclick="gerarPagina()">Gerar</button>
+        
+        </div>
+        <div style="width: 50%;">
+            <label for="output">Resultado:</label>
+            <textarea id="output" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('light');
+            document.body.classList.toggle('dark');
+        }
+    </script>
+    <script src="generator.js"></script>
+</body>
+
+</html>
