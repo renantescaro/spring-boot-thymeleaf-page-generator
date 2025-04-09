@@ -21,17 +21,29 @@
                 <option value="new">HTML Novo</option>
                 <option value="edit">HTML Edição</option>
                 <option value="controller">Controller</option>
+                <option value="entity">Entity</option>
             </select>
 
-            <label for="entityName">Nome da Entidade (ex: vehicleBrand-Marca de Veículo):</label>
-            <input type="text" id="entityName" placeholder="Digite o nome da entidade e o nome em português" />
+            <input
+                type="text" id="imports"
+                placeholder="com.dominio.subdominio"
+                value="com.dominio.subdominio">
+
+            <label for="entityName">
+                Nome da Entidade (ex: vehicleBrand-Marca de Veículo):
+            </label>
+            <input
+                type="text" id="entityName"
+                placeholder="Entidade e nome em português (formato: suaEntidade-Sua Entidade)" />
         
-            <label for="fields">Campos da entidade (formato: campo-label, separados por linha):</label>
+            <label for="fields">
+                Campos da entidade (formato: campo-label, separados por linha):
+            </label>
             <textarea id="fields" placeholder="Exemplo:
 id-Código
 name-Nome
 document-Documento"></textarea>
-        
+
             <button onclick="gerarPagina()">Gerar</button>
 
         </div>

@@ -1,34 +1,38 @@
+
 function gerarPagina() {
-    const tipo = document.getElementById('pageType').value;
-    const entityInput = document.getElementById('entityName').value.trim();
-    const fieldsRaw = document.getElementById('fields').value.trim();
+  const tipo = document.getElementById('pageType').value;
+  const entityInput = document.getElementById('entityName').value.trim();
+  const fieldsRaw = document.getElementById('fields').value.trim();
+  const imports = document.getElementById('imports').value;
 
-    if (!entityInput.includes('-') || !fieldsRaw) {
-        alert('Preencha corretamente o nome da entidade (com "-") e os campos.');
-        return;
-    }
+  if (!entityInput.includes('-') || !fieldsRaw) {
+    alert('Preencha corretamente o nome da entidade (com "-") e os campos.');
+    return;
+  }
 
-    const [entityCode, entityLabel] = entityInput.split('-').map(p => p.trim());
-    const entityPlural = entityCode.endsWith('s') ? entityCode : entityCode + 's';
-    const entityKebab = entityCode.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-    const entityClass = entityCode.charAt(0).toUpperCase() + entityCode.slice(1);
+  const [entityCode, entityLabel] = entityInput.split('-').map(p => p.trim());
+  const entityPlural = (entityCode.endsWith('s') ? entityCode : entityCode + 's').toLowerCase();;
+  const entityKebab = entityCode.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+  const entityClass = entityCode.charAt(0).toUpperCase() + entityCode.slice(1);
+  const entityCamel = entityCode.charAt(0).toLowerCase() + entityCode.slice(1);
 
-    const fields = fieldsRaw
-        .split('\n')
-        .map(l => l.trim())
-        .filter(l => l.includes('-'))
-        .map(l => {
-            const [campo, label] = l.split('-').map(p => p.trim());
-            return { campo, label };
-        });
+  const fields = fieldsRaw
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l.includes('-'))
+    .map(l => {
+      const [campo, label, tipo] = l.split('-').map(p => p.trim());
+      return { campo, label, tipo };
+    });
+  console.log('fields', fields)
 
-    let html = '';
+  let html = '';
 
-    if (tipo === 'index') {
-        const ths = fields.map(f => `<th>${f.label}</th>`).join('\n');
-        const tds = fields.map(f => `<td th:text="\${item.${f.campo}}">${f.label}</td>`).join('\n');
+  if (tipo === 'index') {
+    const ths = fields.map(f => `<th>${f.label}</th>`).join('\n');
+    const tds = fields.map(f => `<td th:text="\${item.${f.campo}}">${f.label}</td>`).join('\n');
 
-        html = `
+html = `
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -91,27 +95,27 @@ ${tds}
 </body>
 </html>`.trim();
 
-    } else if (tipo === 'new' || tipo === 'edit') {
-        const isEdit = tipo === 'edit';
-        const campos = fields
-        .filter(f => f.campo !== 'id')
-        .map(f => `
-            <div class="mb-6">
-              <label for="${f.campo}" class="col-form-label">
-                  ${f.label}
-              </label>
-              <input
-                  type="text" class="form-control"
-                  name="${f.campo}" id="${f.campo}"
-                  th:field="*{${f.campo}}" required>
-            </div>`).join('\n');
+  } else if (tipo === 'new' || tipo === 'edit') {
+    const isEdit = tipo === 'edit';
+    const campos = fields
+    .filter(f => f.campo !== 'id')
+    .map(f => `
+        <div class="mb-6">
+          <label for="${f.campo}" class="col-form-label">
+              ${f.label}
+          </label>
+          <input
+              type="text" class="form-control"
+              name="${f.campo}" id="${f.campo}"
+              th:field="*{${f.campo}}" required>
+        </div>`).join('\n');
 
-        const title = isEdit ? `Editar ${entityLabel}` : `Nova ${entityLabel}`;
-        const action = isEdit
-            ? `@{/panel/${entityKebab}/edit/{id}(id=\${${entityCode}.id})}`
-            : `@{/panel/${entityKebab}/new}`;
+    const title = isEdit ? `Editar ${entityLabel}` : `Nova ${entityLabel}`;
+    const action = isEdit
+        ? `@{/panel/${entityKebab}/edit/{id}(id=\${${entityCamel}.id})}`
+        : `@{/panel/${entityKebab}/new}`;
 
-        html = `
+html = `
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -125,7 +129,7 @@ ${tds}
   <form
       th:action="${action}"
       method="post"
-      th:object="\${${entityCode}}">
+      th:object="\${${entityCamel}}">
       <div class="row" style="margin: 0 30px 0 30px;">
 ${campos}
 
@@ -143,17 +147,17 @@ ${campos}
 </body>
 </html>`.trim();
 
-    } else if (tipo === 'controller') {
-        const setters = fields.map(f => {
-            const nomeCampo = f.campo.charAt(0).toUpperCase() + f.campo.slice(1);
-            return `      updated.set${nomeCampo}(${entityCode}.get${nomeCampo}());`;
-        }).join('\n');
+  } else if (tipo === 'controller') {
+    const setters = fields.map(f => {
+      const nomeCampo = f.campo.charAt(0).toUpperCase() + f.campo.slice(1);
+      return `      updated.set${nomeCampo}(${entityCamel}.get${nomeCampo}());`;
+    }).join('\n');
 
-        html = `
-package com.codes_tech.delivery_manager.controller;
+html = `
+package ${imports}.controller;
 
-import com.codes_tech.delivery_manager.model.${entityClass};
-import com.codes_tech.delivery_manager.repository.${entityClass}Repository;
+import ${imports}.model.${entityClass};
+import ${imports}.repository.${entityClass}Repository;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Controller;
@@ -167,59 +171,96 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @RequestMapping("/panel/${entityKebab}")
 public class ${entityClass}Controller {
 
-  private final ${entityClass}Repository ${entityCode}Repository;
+  private final ${entityClass}Repository ${entityCamel}Repository;
 
-  public ${entityClass}Controller(${entityClass}Repository ${entityCode}Repository) {
-    this.${entityCode}Repository = ${entityCode}Repository;
+  public ${entityClass}Controller(${entityCamel}Repository ${entityCamel}Repository) {
+    this.${entityCamel}Repository = ${entityCamel}Repository;
   }
 
   @RequestMapping(method = RequestMethod.GET)
   public String listRender(Model model) {
-    List<${entityClass}> ${entityPlural} = ${entityCode}Repository.findAll();
+    List<${entityClass}> ${entityPlural} = ${entityCamel}Repository.findAll();
     model.addAttribute("${entityPlural}", ${entityPlural});
-    return "${entityCode}/index";
+    return "${entityCamel}/index";
   }
 
   @RequestMapping(path = "/new", method = RequestMethod.GET)
   public String newRender(Model model) {
-    model.addAttribute("${entityCode}", new ${entityClass}());
-    return "${entityCode}/new";
+    model.addAttribute("${entityCamel}", new ${entityClass}());
+    return "${entityCamel}/new";
   }
 
   @RequestMapping(path = "/edit/{id}", method = RequestMethod.GET)
   public String editRender(@PathVariable Long id, Model model) {
-    Optional<${entityClass}> ${entityCode} = ${entityCode}Repository.findById(id);
-    if (${entityCode}.isPresent()) {
-      model.addAttribute("${entityCode}", ${entityCode}.get());
-      return "${entityCode}/edit";
+    Optional<${entityClass}> ${entityCamel} = ${entityCamel}Repository.findById(id);
+    if (${entityCamel}.isPresent()) {
+      model.addAttribute("${entityCamel}", ${entityCamel}.get());
+      return "${entityCamel}/edit";
     }
     return "redirect:/panel/${entityKebab}";
   }
 
   @RequestMapping(path = "/new", method = RequestMethod.POST)
-  public String insert(@ModelAttribute ${entityClass} ${entityCode}) {
-    ${entityCode}Repository.save(${entityCode});
+  public String insert(@ModelAttribute ${entityClass} ${entityCamel}) {
+    ${entityCamel}Repository.save(${entityCamel});
     return "redirect:/panel/${entityKebab}";
   }
 
   @RequestMapping(path = "/edit/{id}", method = RequestMethod.POST)
-  public String update(@PathVariable Long id, @ModelAttribute ${entityClass} ${entityCode}) {
-    Optional<${entityClass}> existing = ${entityCode}Repository.findById(id);
+  public String update(@PathVariable Long id, @ModelAttribute ${entityClass} ${entityCamel}) {
+    Optional<${entityClass}> existing = ${entityCamel}Repository.findById(id);
     if (existing.isPresent()) {
       ${entityClass} updated = existing.get();
 ${setters}
-      ${entityCode}Repository.save(updated);
+      ${entityCamel}Repository.save(updated);
     }
     return "redirect:/panel/${entityKebab}";
   }
 
   @RequestMapping(path = "/delete/{id}", method = RequestMethod.POST)
   public String delete(@PathVariable Long id) {
-    ${entityCode}Repository.deleteById(id);
+    ${entityCamel}Repository.deleteById(id);
     return "redirect:/panel/${entityKebab}";
   }
 }`.trim();
-    }
+  } else if (tipo === 'entity') {
+    const packageName = document.getElementById('imports').value.trim();
 
-    document.getElementById('output').value = html;
+    const atributos = fields.map(f => {
+      if (f.campo === 'id') {
+          return `      @Id\n      @GeneratedValue(strategy = GenerationType.IDENTITY)\n      private Long id;`;
+      }
+      return `      @Column(nullable = false)\n      private ${f.tipo || 'String'} ${f.campo};`;
+    }).join('\n\n');
+
+    const gettersSetters = fields.map(f => {
+      const campoUpper = f.campo.charAt(0).toUpperCase() + f.campo.slice(1);
+      const tipoCampo = f.campo === 'id' ? 'Long' : f.tipo || 'String';
+
+          return `
+      public ${tipoCampo} get${campoUpper}() {
+          return this.${f.campo};
+      }
+
+      public void set${campoUpper}(${tipoCampo} ${f.campo}) {
+          this.${f.campo} = ${f.campo};
+      }`;
+    }).join('\n');
+
+html = `
+package ${packageName}.model;
+
+import jakarta.persistence.*;
+
+@Entity
+public class ${entityClass} {
+
+${atributos}
+
+${gettersSetters}
+
+}`.trim();
+}
+
+  document.getElementById('output').value = html;
 }
